@@ -1,7 +1,14 @@
 /*Using LVGL with Arduino requires some extra steps:
  *Be sure to read the docs here: https://docs.lvgl.io/master/integration/framework/arduino.html  */
+// These are the default min and maximum values, set to 0 and 4095 to test the screen
+#define HMIN 600
+#define HMAX 3500
+#define VMIN 550
+#define VMAX 3400
+#define XYSWAP 1 // 0 or 1
 
 #include <lvgl.h>
+#include <TFT_Touch.h>
 
 #if LV_USE_TFT_ESPI
 #include <TFT_eSPI.h>
@@ -12,20 +19,22 @@
  *Note that the `lv_examples` library is for LVGL v7 and you shouldn't install it for this version (since LVGL v8)
  *as the examples and demos are now part of the main LVGL library. */
 
-//#include <examples/lv_examples.h>
-//#include <demos/lv_demos.h>
+// #include <examples/lv_examples.h>
+// #include <demos/lv_demos.h>
 
 /*Set to your screen resolution and rotation*/
-#define TFT_HOR_RES   320
-#define TFT_VER_RES   240
-#define TFT_ROTATION  LV_DISPLAY_ROTATION_90
+#define TFT_HOR_RES 320
+#define TFT_VER_RES 240
+#define TFT_ROTATION LV_DISPLAY_ROTATION_90
 
 /*LVGL draw into this buffer, 1/10 screen size usually works well. The size is in bytes*/
 #define DRAW_BUF_SIZE (TFT_HOR_RES * TFT_VER_RES / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
+TFT_Touch touch = TFT_Touch(XPT2046_CS, XPT2046_CLK, XPT2046_MOSI, XPT2046_MISO);
+
 #if LV_USE_LOG != 0
-void my_print( lv_log_level_t level, const char * buf )
+void my_print(lv_log_level_t level, const char *buf)
 {
     LV_UNUSED(level);
     Serial.println(buf);
@@ -34,7 +43,7 @@ void my_print( lv_log_level_t level, const char * buf )
 #endif
 
 /* LVGL calls it when a rendered image needs to copied to the display*/
-void my_disp_flush( lv_display_t *disp, const lv_area_t *area, uint8_t * px_map)
+void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
     /*Copy `px map` to the `area`*/
 
@@ -51,21 +60,24 @@ void my_disp_flush( lv_display_t *disp, const lv_area_t *area, uint8_t * px_map)
 }
 
 /*Read the touchpad*/
-void my_touchpad_read( lv_indev_t * indev, lv_indev_data_t * data )
+void my_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
 {
-    /*For example  ("my_..." functions needs to be implemented by you)
     int32_t x, y;
-    bool touched = my_get_touch( &x, &y );
-
-    if(!touched) {
+    bool touched = touch.Pressed();
+    x = touch.X();
+    y = touch.Y();
+    if (!touched)
+    {
         data->state = LV_INDEV_STATE_RELEASED;
-    } else {
+    }
+    else
+    {
         data->state = LV_INDEV_STATE_PRESSED;
 
         data->point.x = x;
         data->point.y = y;
+        // Serial.printf("x: %d - y: %d\n", data->point.x, data->point.y);
     }
-     */
 }
 
 /*use Arduinos millis() as tick source*/
@@ -79,9 +91,11 @@ void setup()
     String LVGL_Arduino = "Hello Arduino! ";
     LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
 
-    Serial.begin( 115200 );
-    Serial.println( LVGL_Arduino );
+    Serial.begin(115200);
+    Serial.println(LVGL_Arduino);
 
+    touch.setCal(HMIN, HMAX, VMIN, VMAX, TFT_HOR_RES, TFT_VER_RES, XYSWAP); // Raw xmin, xmax, ymin, ymax, width, height
+    touch.setRotation(2);
     lv_init();
 
     /*Set a tick source so that LVGL will know how much time elapsed. */
@@ -89,13 +103,13 @@ void setup()
 
     /* register print function for debugging */
 #if LV_USE_LOG != 0
-    lv_log_register_print_cb( my_print );
+    lv_log_register_print_cb(my_print);
 #endif
 
-    lv_display_t * disp;
+    lv_display_t *disp;
 #if LV_USE_TFT_ESPI
     /*TFT_eSPI can be enabled lv_conf.h to initialize the display in a simple way*/
-    disp = lv_tft_espi_create( TFT_VER_RES,TFT_HOR_RES, draw_buf, sizeof(draw_buf));
+    disp = lv_tft_espi_create(TFT_VER_RES, TFT_HOR_RES, draw_buf, sizeof(draw_buf));
     lv_display_set_rotation(disp, TFT_ROTATION);
 
 #else
@@ -106,7 +120,7 @@ void setup()
 #endif
 
     /*Initialize the (dummy) input device driver*/
-    lv_indev_t * indev = lv_indev_create();
+    lv_indev_t *indev = lv_indev_create();
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); /*Touchpad should have POINTER type*/
     lv_indev_set_read_cb(indev, my_touchpad_read);
 
@@ -128,16 +142,20 @@ void setup()
 
      lv_demo_widgets();
      */
+    lv_obj_t *button = lv_button_create(lv_screen_active());
+    lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
 
-    lv_obj_t *label = lv_label_create( lv_screen_active() );
-    lv_label_set_text( label, "Hello Arduino, I'm LVGL!" );
-    lv_obj_align( label, LV_ALIGN_CENTER, 0, 0 );
+    lv_obj_t *label = lv_label_create(button);
+    lv_label_set_text(label, "Button");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
-    Serial.println( "Setup done" );
+    lv_obj_add_event(button, [](lv_event_t *e)
+                     { Serial.println("button click!!"); }, LV_EVENT_CLICKED, nullptr);
+    Serial.println("Setup done");
 }
 
 void loop()
 {
     lv_timer_handler(); /* let the GUI do its work */
-    delay(5); /* let this time pass */
+    delay(5);           /* let this time pass */
 }
