@@ -1,10 +1,10 @@
 /*Using LVGL with Arduino requires some extra steps:
  *Be sure to read the docs here: https://docs.lvgl.io/master/integration/framework/arduino.html  */
 // These are the default min and maximum values, set to 0 and 4095 to test the screen
-#define HMIN 600
-#define HMAX 3500
-#define VMIN 550
-#define VMAX 3400
+#define HMIN 534
+#define HMAX 3496
+#define VMIN 635
+#define VMAX 3395
 #define XYSWAP 1 // 0 or 1
 
 #include <lvgl.h>
@@ -142,15 +142,35 @@ void setup()
 
      lv_demo_widgets();
      */
-    lv_obj_t *button = lv_button_create(lv_screen_active());
-    lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_t *screen1 = lv_obj_create(nullptr);
+    lv_obj_t *screen2 = lv_obj_create(nullptr);
 
-    lv_obj_t *label = lv_label_create(button);
-    lv_label_set_text(label, "Button");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(screen1, lv_color_make(255, 0, 0), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(screen2, lv_color_make(0, 255, 0), LV_PART_MAIN);
 
-    lv_obj_add_event(button, [](lv_event_t *e)
-                     { Serial.println("button click!!"); }, LV_EVENT_CLICKED, nullptr);
+    lv_screen_load(screen1);
+    lv_obj_add_event(
+        screen1,
+        [](lv_event_t *e)
+        {
+            lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+        },
+        LV_EVENT_CLICKED, screen2);
+    lv_obj_add_event(
+        screen2,
+        [](lv_event_t *e)
+        {
+            lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+        },
+        LV_EVENT_CLICKED, screen1);
+
+    // lv_obj_t *button = lv_button_create(lv_screen_active());
+    // lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
+
+    // lv_obj_t *label = lv_label_create(button);
+    // lv_label_set_text(label, "Button");
+    // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
     Serial.println("Setup done");
 }
 
