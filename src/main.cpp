@@ -8,8 +8,7 @@
 #define XYSWAP 1 // 0 or 1
 
 #include <lvgl.h>
-#include <TFT_Touch.h>
-
+#include <XPT2046_Touchscreen.h>
 #if LV_USE_TFT_ESPI
 #include <TFT_eSPI.h>
 #endif
@@ -31,7 +30,8 @@
 #define DRAW_BUF_SIZE (TFT_HOR_RES * TFT_VER_RES / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
-TFT_Touch touch = TFT_Touch(XPT2046_CS, XPT2046_CLK, XPT2046_MOSI, XPT2046_MISO);
+SPIClass touchscreenSpi = SPIClass(HSPI);
+XPT2046_Touchscreen touchScreen(XPT2046_CS, XPT2046_IRQ); // Param 2 - Touch IRQ Pin - interrupt enabled polling
 
 #if LV_USE_LOG != 0
 void my_print(lv_log_level_t level, const char *buf)
@@ -63,9 +63,9 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 void my_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
 {
     int32_t x, y;
-    bool touched = touch.Pressed();
-    x = touch.X();
-    y = touch.Y();
+    bool touched = touchScreen.touched();
+    x = touchScreen.getPoint().x;
+    y = touchScreen.getPoint().y;
     if (!touched)
     {
         data->state = LV_INDEV_STATE_RELEASED;
@@ -74,9 +74,9 @@ void my_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
     {
         data->state = LV_INDEV_STATE_PRESSED;
 
-        data->point.x = x;
-        data->point.y = y;
-        // Serial.printf("x: %d - y: %d\n", data->point.x, data->point.y);
+        data->point.x = map(x, 350, 3800, 1, TFT_VER_RES); /* Touchscreen X calibration */
+        data->point.y = map(y, 500, 3800, 1, TFT_HOR_RES); /* Touchscreen Y calibration */
+
     }
 }
 
@@ -93,9 +93,8 @@ void setup()
 
     Serial.begin(115200);
     Serial.println(LVGL_Arduino);
-
-    touch.setCal(HMIN, HMAX, VMIN, VMAX, TFT_HOR_RES, TFT_VER_RES, XYSWAP); // Raw xmin, xmax, ymin, ymax, width, height
-    touch.setRotation(2);
+    touchscreenSpi.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
+    touchScreen.begin(touchscreenSpi);
     lv_init();
 
     /*Set a tick source so that LVGL will know how much time elapsed. */
@@ -149,28 +148,30 @@ void setup()
     lv_obj_set_style_bg_color(screen2, lv_color_make(0, 255, 0), LV_PART_MAIN);
 
     lv_screen_load(screen1);
-    lv_obj_add_event(
-        screen1,
+
+    
+    // lv_obj_add_event(
+    //     screen2,
+    //     [](lv_event_t *e)
+    //     {
+    //         lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+    //     },
+    //     LV_EVENT_CLICKED, screen1);
+
+    lv_obj_t *button = lv_button_create(screen1);
+    lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t *label = lv_label_create(button);
+    lv_label_set_text(label, "Button");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+lv_obj_add_event(
+        button,
         [](lv_event_t *e)
         {
-            lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+            Serial.println("click");
+            // lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
         },
         LV_EVENT_CLICKED, screen2);
-    lv_obj_add_event(
-        screen2,
-        [](lv_event_t *e)
-        {
-            lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
-        },
-        LV_EVENT_CLICKED, screen1);
-
-    // lv_obj_t *button = lv_button_create(lv_screen_active());
-    // lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
-
-    // lv_obj_t *label = lv_label_create(button);
-    // lv_label_set_text(label, "Button");
-    // lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
     Serial.println("Setup done");
 }
 
