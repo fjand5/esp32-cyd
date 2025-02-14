@@ -12,7 +12,7 @@
 #if LV_USE_TFT_ESPI
 #include <TFT_eSPI.h>
 #endif
-
+#include "screens/screenBai6.h"
 /*To use the built-in examples and demos of LVGL uncomment the includes below respectively.
  *You also need to copy `lvgl/examples` to `lvgl/src/examples`. Similarly for the demos `lvgl/demos` to `lvgl/src/demos`.
  *Note that the `lv_examples` library is for LVGL v7 and you shouldn't install it for this version (since LVGL v8)
@@ -141,37 +141,39 @@ void setup()
 
      lv_demo_widgets();
      */
-    lv_obj_t *screen1 = lv_obj_create(nullptr);
-    lv_obj_t *screen2 = lv_obj_create(nullptr);
 
-    lv_obj_set_style_bg_color(screen1, lv_color_make(255, 0, 0), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(screen2, lv_color_make(0, 255, 0), LV_PART_MAIN);
+    lv_obj_t *screen = createScreenBai6();
+    lv_screen_load(screen);
+//     lv_obj_t *screen2 = lv_obj_create(nullptr);
 
-    lv_screen_load(screen1);
+//     lv_obj_set_style_bg_color(screen1, lv_color_make(255, 0, 0), LV_PART_MAIN);
+//     lv_obj_set_style_bg_color(screen2, lv_color_make(0, 255, 0), LV_PART_MAIN);
+
+//     lv_screen_load(screen1);
 
     
-    // lv_obj_add_event(
-    //     screen2,
-    //     [](lv_event_t *e)
-    //     {
-    //         lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
-    //     },
-    //     LV_EVENT_CLICKED, screen1);
+//     // lv_obj_add_event(
+//     //     screen2,
+//     //     [](lv_event_t *e)
+//     //     {
+//     //         lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+//     //     },
+//     //     LV_EVENT_CLICKED, screen1);
 
-    lv_obj_t *button = lv_button_create(screen1);
-    lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
+//     lv_obj_t *button = lv_button_create(screen1);
+//     lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
 
-    lv_obj_t *label = lv_label_create(button);
-    lv_label_set_text(label, "Button");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-lv_obj_add_event(
-        button,
-        [](lv_event_t *e)
-        {
-            Serial.println("click");
-            // lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
-        },
-        LV_EVENT_CLICKED, screen2);
+//     lv_obj_t *label = lv_label_create(button);
+//     lv_label_set_text(label, "Button");
+//     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+// lv_obj_add_event(
+//         button,
+//         [](lv_event_t *e)
+//         {
+//             Serial.println("click");
+//             // lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
+//         },
+//         LV_EVENT_CLICKED, screen2);
     Serial.println("Setup done");
 }
 
