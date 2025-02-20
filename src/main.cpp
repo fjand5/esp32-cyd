@@ -12,7 +12,7 @@
 #if LV_USE_TFT_ESPI
 #include <TFT_eSPI.h>
 #endif
-#include "screens/screenBai8.h"
+#include "screens/screenBai9.h"
 /*To use the built-in examples and demos of LVGL uncomment the includes below respectively.
  *You also need to copy `lvgl/examples` to `lvgl/src/examples`. Similarly for the demos `lvgl/demos` to `lvgl/src/demos`.
  *Note that the `lv_examples` library is for LVGL v7 and you shouldn't install it for this version (since LVGL v8)
@@ -142,7 +142,7 @@ void setup()
      lv_demo_widgets();
      */
 
-    lv_obj_t *screen = createScreenBai8();
+    lv_obj_t *screen = createScreenBai9();
     lv_screen_load(screen);
 //     lv_obj_t *screen2 = lv_obj_create(nullptr);
 
