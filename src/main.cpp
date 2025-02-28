@@ -22,12 +22,9 @@
 // #include <demos/lv_demos.h>
 
 /*Set to your screen resolution and rotation*/
-#define TFT_HOR_RES 320
-#define TFT_VER_RES 240
-#define TFT_ROTATION LV_DISPLAY_ROTATION_90
 
 /*LVGL draw into this buffer, 1/10 screen size usually works well. The size is in bytes*/
-#define DRAW_BUF_SIZE (TFT_HOR_RES * TFT_VER_RES / 10 * (LV_COLOR_DEPTH / 8))
+#define DRAW_BUF_SIZE (TFT_WIDTH * TFT_HEIGHT / 10 * (LV_COLOR_DEPTH / 8))
 uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 SPIClass touchscreenSpi = SPIClass(HSPI);
@@ -74,9 +71,9 @@ void my_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
     {
         data->state = LV_INDEV_STATE_PRESSED;
 
-        data->point.x = map(x, 350, 3800, 1, TFT_VER_RES); /* Touchscreen X calibration */
-        data->point.y = map(y, 500, 3800, 1, TFT_HOR_RES); /* Touchscreen Y calibration */
-
+        data->point.x = map(x, 350, 3800, 1, TFT_WIDTH); /* Touchscreen X calibration */
+        data->point.y = map(y, 260, 3800, 1, TFT_HEIGHT); /* Touchscreen Y calibration */
+        // Serial.printf("X: %d, Y: %d\n", x, y);
     }
 }
 
@@ -95,6 +92,7 @@ void setup()
     Serial.println(LVGL_Arduino);
     touchscreenSpi.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
     touchScreen.begin(touchscreenSpi);
+    touchScreen.setRotation(0);
     lv_init();
 
     /*Set a tick source so that LVGL will know how much time elapsed. */
@@ -108,8 +106,8 @@ void setup()
     lv_display_t *disp;
 #if LV_USE_TFT_ESPI
     /*TFT_eSPI can be enabled lv_conf.h to initialize the display in a simple way*/
-    disp = lv_tft_espi_create(TFT_VER_RES, TFT_HOR_RES, draw_buf, sizeof(draw_buf));
-    lv_display_set_rotation(disp, TFT_ROTATION);
+    disp = lv_tft_espi_create(TFT_WIDTH, TFT_HEIGHT, draw_buf, sizeof(draw_buf));
+    // lv_display_set_rotation(disp, TFT_ROTATION);
 
 #else
     /*Else create a display yourself*/
@@ -144,7 +142,6 @@ void setup()
 
     lv_obj_t *screen = createScreenBai9();
     lv_screen_load(screen);
-//     lv_obj_t *screen2 = lv_obj_create(nullptr);
 
 //     lv_obj_set_style_bg_color(screen1, lv_color_make(255, 0, 0), LV_PART_MAIN);
 //     lv_obj_set_style_bg_color(screen2, lv_color_make(0, 255, 0), LV_PART_MAIN);
@@ -160,20 +157,19 @@ void setup()
 //     //     },
 //     //     LV_EVENT_CLICKED, screen1);
 
-//     lv_obj_t *button = lv_button_create(screen1);
-//     lv_obj_align(button, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_t *button = lv_button_create(screen);
+    lv_obj_align(button, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
 
-//     lv_obj_t *label = lv_label_create(button);
-//     lv_label_set_text(label, "Button");
-//     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-// lv_obj_add_event(
-//         button,
-//         [](lv_event_t *e)
-//         {
-//             Serial.println("click");
-//             // lv_screen_load_anim((lv_obj_t*)lv_event_get_user_data(e), LV_SCR_LOAD_ANIM_MOVE_BOTTOM, 1000, 100, false);
-//         },
-//         LV_EVENT_CLICKED, screen2);
+    lv_obj_t *label = lv_label_create(button);
+    lv_label_set_text(label, "Button");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+lv_obj_add_event(
+        button,
+        [](lv_event_t *e)
+        {
+            Serial.println("click");
+        },
+        LV_EVENT_CLICKED, nullptr);
     Serial.println("Setup done");
 }
 
